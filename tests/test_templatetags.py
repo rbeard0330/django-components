@@ -366,3 +366,22 @@ class MultiComponentTests(SimpleTestCase):
         second_slot = self.wrap_with_slot_tags(second_slot_content)
         rendered = self.make_template('', second_slot).render(Context({}))
         self.assertHTMLEqual(rendered, self.expected_result('', second_slot_content))
+
+
+class ExtraArgsTest(SimpleTestCase):
+    def setUp(self):
+        component.registry.clear()
+
+    def register_components(self):
+        component.registry.register('iffed_component', IffedComponent)
+
+    def test_extra_variable_is_available(self):
+        self.register_components()
+        template = Template(
+            '{% load component_tags %}{% component_block "iffed_component" variable="provided value" %}'
+            '{% component_args variable2="second value"%}'
+            '{% endcomponent_block %}'
+        )
+        rendered = template.render(Context({}))
+        self.assertHTMLEqual(rendered,
+                             "Variable: <strong>provided value</strong>\nVariable2: <strong>second value</strong>")
