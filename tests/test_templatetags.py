@@ -8,7 +8,7 @@ from .django_test_setup import *  # NOQA
 from .testutils import Django111CompatibleSimpleTestCase as SimpleTestCase
 
 
-class SimpleComponent(component.Component):
+class SimpleComponent(component.BaseComponent):
     def context(self, variable, variable2="default"):
         return {
             "variable": variable,
@@ -28,22 +28,22 @@ class IffedComponent(SimpleComponent):
         return "iffed_template.html"
 
 
-class SlottedComponent(component.Component):
+class SlottedComponent(component.BaseComponent):
     def template(self, context):
         return "slotted_template.html"
 
 
-class SlottedComponentWithMissingVariable(component.Component):
+class SlottedComponentWithMissingVariable(component.BaseComponent):
     def template(self, context):
         return "slotted_template_with_missing_variable.html"
 
 
-class SlottedComponentNoSlots(component.Component):
+class SlottedComponentNoSlots(component.BaseComponent):
     def template(self, context):
         return "slotted_template_no_slots.html"
 
 
-class SlottedComponentWithContext(component.Component):
+class SlottedComponentWithContext(component.BaseComponent):
     def context(self, variable):
         return {"variable": variable}
 
@@ -51,7 +51,7 @@ class SlottedComponentWithContext(component.Component):
         return "slotted_template.html"
 
 
-class ComponentWithProvidedAndDefaultParameters(component.Component):
+class ComponentWithProvidedAndDefaultParameters(component.BaseComponent):
     def context(self, variable, default_param="default text"):
         return {"variable": variable, 'default_param': default_param}
 

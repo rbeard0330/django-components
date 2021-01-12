@@ -6,7 +6,7 @@ from .django_test_setup import *  # NOQA
 from .testutils import Django111CompatibleSimpleTestCase as SimpleTestCase
 
 
-class SimpleComponent(component.Component):
+class SimpleComponent(component.BaseComponent):
     def context(self, variable=None):
         return {"variable": variable} if variable is not None else {}
 
@@ -18,7 +18,7 @@ class SimpleComponent(component.Component):
         return 'Variable: < strong > {} < / strong >'.format(variable_value)
 
 
-class ParentComponent(component.Component):
+class ParentComponent(component.BaseComponent):
     def context(self):
         return {
             "shadowing_variable": 'NOT SHADOWED'
@@ -28,7 +28,7 @@ class ParentComponent(component.Component):
         return "parent_template.html"
 
 
-class ParentComponentWithArgs(component.Component):
+class ParentComponentWithArgs(component.BaseComponent):
     def context(self, parent_value):
         return {
             "inner_parent_value": parent_value
@@ -38,7 +38,7 @@ class ParentComponentWithArgs(component.Component):
         return "parent_with_args_template.html"
 
 
-class VariableDisplay(component.Component):
+class VariableDisplay(component.BaseComponent):
     def context(self, shadowing_variable=None, new_variable=None):
         context = {}
         if shadowing_variable is not None:
@@ -51,7 +51,7 @@ class VariableDisplay(component.Component):
         return "variable_display.html"
 
 
-class IncrementerComponent(component.Component):
+class IncrementerComponent(component.BaseComponent):
     def context(self, value=0):
         value = int(value)
         if hasattr(self, 'call_count'):

@@ -10,14 +10,14 @@ from .testutils import Django111CompatibleSimpleTestCase as SimpleTestCase
 
 class ComponentRegistryTest(SimpleTestCase):
     def test_empty_component(self):
-        class EmptyComponent(component.Component):
+        class EmptyComponent(component.BaseComponent):
             pass
 
         with self.assertRaises(NotImplementedError):
             EmptyComponent().template({})
 
     def test_simple_component(self):
-        class SimpleComponent(component.Component):
+        class SimpleComponent(component.BaseComponent):
             def context(self, variable=None):
                 return {
                     "variable": variable,
@@ -43,7 +43,7 @@ class ComponentRegistryTest(SimpleTestCase):
         """).lstrip())
 
     def test_component_with_list_of_styles(self):
-        class MultistyleComponent(component.Component):
+        class MultistyleComponent(component.BaseComponent):
             class Media:
                 css = {"all": ["style.css", "style2.css"]}
                 js = ["script.js", "script2.js"]
@@ -58,7 +58,7 @@ class ComponentRegistryTest(SimpleTestCase):
         """).strip())
 
     def test_component_with_filtered_template(self):
-        class FilteredComponent(component.Component):
+        class FilteredComponent(component.BaseComponent):
             def context(self, var1=None, var2=None):
                 return {
                     "var1": var1,
