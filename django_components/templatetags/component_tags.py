@@ -4,9 +4,10 @@ import django
 from django import template
 from django.template.base import Node, NodeList, TemplateSyntaxError
 from django.template.library import parse_bits
-from django.utils.safestring import mark_safe
 
 from django_components.component import registry
+
+from ..middleware import RENDERED_COMPONENTS_CONTEXT_KEY, CSS_DEPENDENCY_PLACEHOLDER, JS_DEPENDENCY_PLACEHOLDER
 
 # Django < 2.1 compatibility
 try:
@@ -51,37 +52,39 @@ def get_components_from_registry(registry):
     return components
 
 
-@register.simple_tag(name="component_dependencies")
-def component_dependencies_tag():
+@register.simple_tag(name="component_dependencies", takes_context=True)
+def component_dependencies_tag(context):
     """Render both the CSS and JS dependency tags."""
 
-    rendered_dependencies = []
-    for component in get_components_from_registry(registry):
-        rendered_dependencies.append(component.render_dependencies())
-
-    return mark_safe("\n".join(rendered_dependencies))
+    return do_dependencies(context, CSS_DEPENDENCY_PLACEHOLDER + JS_DEPENDENCY_PLACEHOLDER)
 
 
-@register.simple_tag(name="component_css_dependencies")
-def component_css_dependencies_tag():
+@register.simple_tag(name="component_css_dependencies", takes_context=True)
+def component_css_dependencies_tag(context):
     """Render the CSS tags."""
 
-    rendered_dependencies = []
-    for component in get_components_from_registry(registry):
-        rendered_dependencies.append(component.render_css_dependencies())
-
-    return mark_safe("\n".join(rendered_dependencies))
+    return do_dependencies(context, CSS_DEPENDENCY_PLACEHOLDER)
 
 
-@register.simple_tag(name="component_js_dependencies")
-def component_js_dependencies_tag():
+@register.simple_tag(name="component_js_dependencies", takes_context=True)
+def component_js_dependencies_tag(context):
     """Render the JS tags."""
 
-    rendered_dependencies = []
-    for component in get_components_from_registry(registry):
-        rendered_dependencies.append(component.render_js_dependencies())
+    return do_dependencies(context, JS_DEPENDENCY_PLACEHOLDER)
 
-    return mark_safe("\n".join(rendered_dependencies))
+
+@register.simple_tag(name="begin_tracking_components", takes_context=True)
+def component_js_dependencies_tag(context):
+    """Add rendered components set to context. This tag should only be used in the
+    unusual situation where a component is rendered before its CSS dependencies."""
+
+    return do_dependencies(context, '')
+
+
+def do_dependencies(context, placeholder):
+    if RENDERED_COMPONENTS_CONTEXT_KEY not in context:
+        context[RENDERED_COMPONENTS_CONTEXT_KEY] = set()
+    return placeholder
 
 
 @register.tag(name='component')
@@ -133,6 +136,12 @@ class ComponentNode(Node):
     def render(self, context):
         self.component.outer_context = context.flatten()
 
+        if RENDERED_COMPONENTS_CONTEXT_KEY in context:
+            rendered_components_set = context[RENDERED_COMPONENTS_CONTEXT_KEY]
+            rendered_components_set.add(self.component)
+        else:
+            rendered_components_set = None
+
         # Resolve FilterExpressions and Variables that were passed as args to the component, then call component's
         # context method to get values to insert into the context
         resolved_context_args = [safe_resolve(arg, context) for arg in self.context_args]
@@ -144,6 +153,9 @@ class ComponentNode(Node):
         # Create a fresh context if requested
         if self.isolated_context:
             context = context.new()
+            # Insert a reference to the rendered component set so that child components can register themselves
+            if rendered_components_set is not None:
+                context[RENDERED_COMPONENTS_CONTEXT_KEY] = rendered_components_set
 
         with context.update(component_context):
             return self.component.render(context, slots_filled=self.slots)
