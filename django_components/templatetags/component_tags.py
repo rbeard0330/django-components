@@ -4,7 +4,7 @@ import django
 from django import template
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.template.base import Node, NodeList, TemplateSyntaxError
+from django.template.base import Node, NodeList, TemplateSyntaxError, mark_safe
 from django.template.library import parse_bits
 
 from django_components.component import registry
@@ -58,21 +58,21 @@ def get_components_from_registry(registry):
 def component_dependencies_tag():
     """Marks location where CSS link and JS script tags should be rendered."""
 
-    return CSS_DEPENDENCY_PLACEHOLDER + JS_DEPENDENCY_PLACEHOLDER
+    return mark_safe(CSS_DEPENDENCY_PLACEHOLDER + JS_DEPENDENCY_PLACEHOLDER)
 
 
 @register.simple_tag(name="component_css_dependencies")
 def component_css_dependencies_tag():
     """Marks location where CSS link tags should be rendered."""
 
-    return CSS_DEPENDENCY_PLACEHOLDER
+    return mark_safe(CSS_DEPENDENCY_PLACEHOLDER)
 
 
 @register.simple_tag(name="component_js_dependencies")
 def component_js_dependencies_tag():
     """Marks location where JS script tags should be rendered."""
 
-    return JS_DEPENDENCY_PLACEHOLDER
+    return mark_safe(JS_DEPENDENCY_PLACEHOLDER)
 
 
 @register.tag(name='component')
