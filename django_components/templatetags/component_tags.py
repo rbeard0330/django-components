@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import django
 from django import template
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.template.base import Node, NodeList, TemplateSyntaxError
 from django.template.library import parse_bits
 
@@ -52,39 +54,25 @@ def get_components_from_registry(registry):
     return components
 
 
-@register.simple_tag(name="component_dependencies", takes_context=True)
-def component_dependencies_tag(context):
-    """Render both the CSS and JS dependency tags."""
+@register.simple_tag(name="component_dependencies")
+def component_dependencies_tag():
+    """Marks location where CSS link and JS script tags should be rendered."""
 
-    return do_dependencies(context, CSS_DEPENDENCY_PLACEHOLDER + JS_DEPENDENCY_PLACEHOLDER)
-
-
-@register.simple_tag(name="component_css_dependencies", takes_context=True)
-def component_css_dependencies_tag(context):
-    """Render the CSS tags."""
-
-    return do_dependencies(context, CSS_DEPENDENCY_PLACEHOLDER)
+    return CSS_DEPENDENCY_PLACEHOLDER + JS_DEPENDENCY_PLACEHOLDER
 
 
-@register.simple_tag(name="component_js_dependencies", takes_context=True)
-def component_js_dependencies_tag(context):
-    """Render the JS tags."""
+@register.simple_tag(name="component_css_dependencies")
+def component_css_dependencies_tag():
+    """Marks location where CSS link tags should be rendered."""
 
-    return do_dependencies(context, JS_DEPENDENCY_PLACEHOLDER)
-
-
-@register.simple_tag(name="begin_tracking_components", takes_context=True)
-def component_js_dependencies_tag(context):
-    """Add rendered components set to context. This tag should only be used in the
-    unusual situation where a component is rendered before its CSS dependencies."""
-
-    return do_dependencies(context, '')
+    return CSS_DEPENDENCY_PLACEHOLDER
 
 
-def do_dependencies(context, placeholder):
-    if RENDERED_COMPONENTS_CONTEXT_KEY not in context:
-        context[RENDERED_COMPONENTS_CONTEXT_KEY] = set()
-    return placeholder
+@register.simple_tag(name="component_js_dependencies")
+def component_js_dependencies_tag():
+    """Marks location where JS script tags should be rendered."""
+
+    return JS_DEPENDENCY_PLACEHOLDER
 
 
 @register.tag(name='component')
@@ -139,6 +127,9 @@ class ComponentNode(Node):
         if RENDERED_COMPONENTS_CONTEXT_KEY in context:
             rendered_components_set = context[RENDERED_COMPONENTS_CONTEXT_KEY]
             rendered_components_set.add(self.component)
+        elif str(self.component.media) != '' and settings.DEBUG:
+            raise ImproperlyConfigured('component_dependencies context processor must be '
+                                       'used for components that have Media')
         else:
             rendered_components_set = None
 
